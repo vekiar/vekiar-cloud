@@ -1,13 +1,4 @@
 # manage_arm64.py
-# In search of a better name
-
-# We need
-# 1. Execute OS commands
-# 2. Collect and pass a bunch of flags
-# 3. Create vm
-# 4. Stop (but do not terminate) vm
-# 5. Terminate vm
-
 
 import os
 import argparse
@@ -25,9 +16,20 @@ parser.add_argument("-s", "--size", default=10, help="VM disk image size")
 parser.add_argument("-x", "--headless", action='store_true', help="Run a headless VM")
 parser.add_argument("-t", "--terminate", action='store_true', help="Terminate VM")
 parser.add_argument("-z", "--cloud", action='store_true', help="VM will use user-data initialization")
-parser.add_argument("-f", "--forward", nargs="?", const=None, help="Forward ports from localhost to VM (comma-separated please!)")
+parser.add_argument("-f", "--forward", action='store_true', help="Forward ports from localhost to VM (comma-separated please!)")
+parser.add_argument("-b", "--bridged", action='store_true', help="Bridge network to host")
+parser.add_argument("-dr", "--dry-run", action='store_true', help="Print (do not run) the command")
+parser.add_argument("-l", "--list", action='store_true', help="List all known instances")
 
 args = parser.parse_args()
+
+# TODO - LOTS of work to do here
+def list_instances():
+  return os.system("ls -l ./instances | awk '{print $9}'")
+
+if args.list == True:
+  print(list_instances())
+  exit()
 
 if args.name == "":
   args.name = vm_instance_id
@@ -53,6 +55,10 @@ if args.cloud == True:
   user_data_file = "user-data/user-data.img"
   os.system("cp {} {}".format(user_data_file, user_data_path))
 
+def create_mac_address():
+  mac_address = "00:11:22:33:44:55"
+  return mac_address
+
 base_command = "qemu-system-aarch64"
 flags = ("-nodefaults",
          "-cpu host",
@@ -61,7 +67,12 @@ flags = ("-nodefaults",
          "-accel hvf",
          "-m {}".format(int(args.memory)*1024),
          ["-device virtio-gpu","-nographic"][args.headless],
-         ["-nic user,model=virtio","-nic user,model=virtio,hostfwd=tcp:127.0.0.1:7822-0.0.0.0:22"][args.forward != None],
+         # Network
+         "-device virtio-net-pci,mac={},netdev=net0".format(create_mac_address()),
+         ["", "-netdev vmnet-bridged,id=net0,ifname=en0"][args.bridged],
+         #["-nic user,model=virtio","-nic vmnet-bridged,ifname=en0"][args.bridged],
+         ["","-nic user,model=virtio,hostfwd=tcp:127.0.0.1:7822-0.0.0.0:22"][args.forward],
+         # Display
          ["-display cocoa,show-cursor=on",""][args.headless],
          "-device qemu-xhci",
          "-device usb-kbd",
@@ -78,8 +89,12 @@ flags = ("-nodefaults",
 
 command = "{} {}".format(base_command, ' '.join([x for x in flags]))
 
-print("Command: %s" % (command))
-os.system(command)
+if args.dry_run == True:
+  print("Command: %s" % (command))
+else:
+  print("Command: %s" % (command))
+  os.system(command)
 
 if args.terminate == True:
   os.system("rm -rf {}".format(vm_path))
+
