@@ -1,4 +1,4 @@
-# manage_arm64.py
+# vkrc - a tiny, local, stateful -but definitely, definitely not real!- cloud orchestration tool.
 
 import os
 import argparse
