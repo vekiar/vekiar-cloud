@@ -1,5 +1,15 @@
 # vkrc - a tiny, local, stateful -but definitely, definitely not real!- cloud orchestration tool.
 
+# We don't have an issue / backlog management system so we add everything here.
+## WISHLIST
+# [ ] Stateful list of virtual machines (running, stopped, maybe historical deleted ones?)
+# [ ] "API" verbs (<create|run|list|manage|terminate> and that sort of thing)
+## ISSUES
+# [ ] Running without arguments creates a virtual machine. Should return help.
+#     - Is this strictly true? Should the default "no arguments" behaviour be <help> or <something> (like run an ephemeral default OS vm)?
+#     - This is more an issue of having <create|run|list|manage|terminate> verbs
+# [ ] The <list> method just returns anything inside of ./instances
+
 import os
 import argparse
 import uuid
@@ -23,7 +33,6 @@ parser.add_argument("-l", "--list", action='store_true', help="List all known in
 
 args = parser.parse_args()
 
-# TODO - LOTS of work to do here
 def list_instances():
   return os.system("ls -l ./instances | awk '{print $9}'")
 
