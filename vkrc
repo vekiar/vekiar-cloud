@@ -28,10 +28,12 @@ parser.add_argument("-t", "--terminate", action='store_true', help="Terminate VM
 parser.add_argument("-z", "--cloud", action='store_true', help="VM will use user-data initialization")
 parser.add_argument("-f", "--forward", action='store_true', help="Forward ports from localhost to VM (comma-separated please!)")
 parser.add_argument("-b", "--bridged", action='store_true', help="Bridge network to host")
+parser.add_argument("-p", "--shared", action='store_true', help="Shared network")
 parser.add_argument("-dr", "--dry-run", action='store_true', help="Print (do not run) the command")
 parser.add_argument("-l", "--list", action='store_true', help="List all known instances")
 
 args = parser.parse_args()
+print(args)
 
 def list_instances():
   return os.system("ls -l ./instances | awk '{print $9}'")
@@ -60,6 +62,7 @@ else:
 
 # User data if we are on a "cloud" instance
 if args.cloud == True:
+  print("User data injection selected.")
   user_data_path = vm_path + "/" + "user-data.img"
   user_data_file = "user-data/user-data.img"
   os.system("cp {} {}".format(user_data_file, user_data_path))
@@ -77,9 +80,9 @@ flags = ("-nodefaults",
          "-m {}".format(int(args.memory)*1024),
          ["-device virtio-gpu","-nographic"][args.headless],
          # Network
-         "-device virtio-net-pci,mac={},netdev=net0".format(create_mac_address()),
+         ["", "-device virtio-net-pci,mac={},netdev=net0".format(create_mac_address())][args.bridged or args.shared],
          ["", "-netdev vmnet-bridged,id=net0,ifname=en0"][args.bridged],
-         #["-nic user,model=virtio","-nic vmnet-bridged,ifname=en0"][args.bridged],
+         ["", ""][args.shared],
          ["","-nic user,model=virtio,hostfwd=tcp:127.0.0.1:7822-0.0.0.0:22"][args.forward],
          # Display
          ["-display cocoa,show-cursor=on",""][args.headless],
@@ -106,4 +109,3 @@ else:
 
 if args.terminate == True:
   os.system("rm -rf {}".format(vm_path))
-
