@@ -57,6 +57,9 @@ if not os.path.exists(vm_path):
     # This bit reads a bit complicated 
     os.system("cp {} {}/{}.img".format(args.disk, vm_path, vm_instance_id))
     args.disk = vm_path + "/" + vm_instance_id + ".img"
+    size_add = int(args.size) - 10
+    if size_add > 0:
+      os.system("qemu-img resize -f qcow2 {} +{}G".format(args.disk, size_add))
 else:
   args.disk = vm_path + "/" + args.name + ".img"
 
